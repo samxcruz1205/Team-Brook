@@ -1,1 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIGHTSHIFT — HOSTEL SURVIVAL OS</title>
+<style>
+:root{
+  --bg:#020609; --bg2:#061120; --panel:rgba(10,22,36,.72); --panel2:rgba(8,20,32,.88);
+  --line:rgba(77,227,255,.16); --line2:rgba(57,255,136,.18);
+  --neon:#39ff88; --cyan:#4de3ff; --blue:#2a5a8f; --mid:#0b1f33; --teal:#0c3238;
+  --txt:#d7e9e4; --mut:#7fa0a8; --gold:#ffcf5c; --red:#ff4d5e; --amber:#ffb454;
+  --glow:0 0 18px rgba(57,255,136,.25),0 0 42px rgba(77,227,255,.12);
+  --r:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:radial-gradient(1200px 600px at 70% -10%,#0c2740 0%,transparent 60%),radial-gradient(900px 500px at 10% 10%,#083033 0%,transparent 55%),linear-gradient(180deg,#020609,#040e1a 60%,#020609);color:var(--txt);font-family:Consolas,Menlo,Monaco,"Courier New",monospace;min-height:100%}
+body{overflow-x:hidden}
+#rain{position:fixed;inset:0;z-index:0;opacity:.5;pointer-events:none}
+.vignette{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.65) 100%)}
+/* BOOT */
+#boot{position:fixed;inset:0;z-index:100;background:#010406;display:flex;align-items:center;justify-content:center;transition:opacity .6s}
+#boot.done{opacity:0;pointer-events:none}
+.bootbox{width:min(640px,92vw);border:1px solid var(--line);background:rgba(3,10,16,.9);border-radius:12px;padding:22px;box-shadow:var(--glow)}
+.bootbox pre{margin:0;white-space:pre-wrap;font-size:13px;line-height:1.6;color:#9fffc0;min-height:180px}
+.bar{height:8px;background:#06202a;border-radius:99px;overflow:hidden;margin-top:14px;border:1px solid var(--line)}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--neon),var(--cyan));box-shadow:var(--glow)}
+/* HEADER */
+header{position:relative;z-index:5;display:flex;gap:14px;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(6,17,32,.9),rgba(4,12,22,.7));backdrop-filter:blur(10px);flex-wrap:wrap}
+.logo{cursor:pointer;user-select:none;display:flex;gap:12px;align-items:center}
+.mark{width:44px;height:44px;border-radius:10px;background:conic-gradient(from 180deg,#0a2e35,#123a5a,#0a2e35);border:1px solid var(--line2);display:grid;place-items:center;font-weight:900;color:var(--neon);text-shadow:0 0 12px var(--neon);box-shadow:var(--glow)}
+.logo h1{margin:0;font-size:20px;letter-spacing:3px}
+.logo small{display:block;font-size:10px;letter-spacing:4px;color:var(--cyan)}
+.hstats{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pill{border:1px solid var(--line);border-radius:99px;padding:6px 12px;font-size:12px;background:rgba(8,20,32,.8)}
+.pill b{color:var(--neon)}
+button{font-family:inherit;cursor:pointer;color:var(--txt);background:linear-gradient(180deg,#0e2a3f,#081827);border:1px solid var(--line);border-radius:10px;padding:9px 14px;transition:.18s}
+button:hover{border-color:var(--neon);box-shadow:var(--glow);transform:translateY(-1px)}
+button.primary{background:linear-gradient(90deg,#0c3a2a,#0e4a35);border-color:var(--line2)}
+button.danger{background:linear-gradient(180deg,#3a0e16,#1c060b);border-color:rgba(255,77,94,.4)}
+button.small{padding:6px 10px;font-size:12px;border-radius:8px}
+/* NAV */
+nav{position:relative;z-index:5;display:flex;gap:8px;padding:10px 14px;overflow-x:auto;border-bottom:1px solid var(--line);background:rgba(3,9,16,.8);backdrop-filter:blur(8px)}
+nav button{white-space:nowrap;font-size:12px;letter-spacing:1px;opacity:.85}
+nav button.on{opacity:1;border-color:var(--neon);box-shadow:var(--glow);color:#eafff2}
+/* MAIN */
+main{position:relative;z-index:4;max-width:1180px;margin:0 auto;padding:18px 16px 90px}
+.page{display:none;animation:fade .35s ease}
+.page.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.hero{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,rgba(10,26,42,.85),rgba(4,12,22,.9));padding:28px;box-shadow:var(--glow)}
+.hero h2{margin:6px 0;font-size:clamp(28px,5vw,56px);letter-spacing:2px;line-height:1}
+.hero h2 span{color:var(--neon);text-shadow:0 0 18px rgba(57,255,136,.6)}
+.kicker{color:var(--cyan);letter-spacing:4px;font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+.card{position:relative;border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:14px;overflow:hidden}
+.card h3{margin:0 0 8px;font-size:13px;letter-spacing:2px;color:var(--cyan)}
+.card p,.card div{font-size:13px;line-height:1.6}
+.stat{font-size:26px;font-weight:900;color:var(--neon)}
+.meter{height:8px;background:#06202a;border-radius:99px;overflow:hidden;border:1px solid var(--line);margin-top:8px}
+.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--neon),var(--cyan))}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+input,select{font-family:inherit;background:#04101c;color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+.tag{display:inline-block;font-size:11px;border:1px solid var(--line2);border-radius:99px;padding:3px 9px;color:var(--neon);margin:2px 4px 2px 0}
+.sev{font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid}
+.s-crit{color:#ff8a94;border-color:rgba(255,77,94,.5)} .s-high{color:var(--amber);border-color:rgba(255,180,84,.5)} .s-low{color:var(--cyan);border-color:var(--line)}
+.mono{font-size:12px;color:var(--mut)}
+/* character layers - never cover UI */
+.char{position:absolute;top:0;bottom:0;width:330px;pointer-events:none;z-index:0;opacity:.62;filter:saturate(1.1) contrast(1.05)}
+.char.left{left:-30px;-webkit-mask-image:linear-gradient(90deg,#000 55%,transparent 95%);mask-image:linear-gradient(90deg,#000 55%,transparent 95%)}
+.char.right{right:-30px;-webkit-mask-image:linear-gradient(270deg,#000 55%,transparent 95%);mask-image:linear-gradient(270deg,#000 55%,transparent 95%)}
+.char svg{width:100%;height:100%}
+.char .cap{position:absolute;bottom:8px;left:12px;right:12px;font-size:10px;letter-spacing:2px;color:rgba(215,233,228,.75);background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:4px 8px}
+.content{position:relative;z-index:1}
+.scanline{position:relative;overflow:hidden}
+.scanline:after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(77,227,255,.05) 3px 4px)}
+.shake{animation:shk .4s}
+@keyframes shk{0%,100%{transform:none}25%{transform:translate(3px,-2px)}50%{transform:translate(-3px,2px)}75%{transform:translate(2px,2px)}}
+/* terminal */
+#termOut{background:#01060b;border:1px solid var(--line);border-radius:12px;padding:12px;height:260px;overflow:auto;font-size:13px;line-height:1.6}
+#termOut .g{color:var(--neon)} #termOut .c{color:var(--cyan)} #termOut .r{color:#ff8a94}
+/* map */
+.mapwrap{display:grid;grid-template-columns:1.2fr .8fr;gap:12px}
+#mapSpin{transition:transform .8s cubic-bezier(.34,1.56,.64,1);transform-origin:50% 50%}
+#mapSpin.spinning{animation:mspin 6s linear infinite}
+@keyframes mspin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+button.dodge{transition:left .25s,top .25s,transform .15s}
+button:disabled{opacity:.35;cursor:not-allowed;filter:grayscale(1)}
+.maze{position:relative;min-height:120px;border:1px dashed var(--line2);border-radius:10px;padding:10px;overflow:hidden}
+.zone{cursor:pointer;fill:rgba(77,227,255,.08);stroke:rgba(77,227,255,.35)}
+.zone:hover{fill:rgba(57,255,136,.2);stroke:var(--neon)}
+footer{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;gap:12px;align-items:center;padding:8px 14px;font-size:12px;background:rgba(2,7,12,.92);border-top:1px solid var(--line);overflow:hidden;white-space:nowrap}
+#ticker{overflow:hidden;text-overflow:ellipsis;color:var(--mut)}
+#toast{position:fixed;right:16px;bottom:52px;z-index:60;display:flex;flex-direction:column;gap:8px}
+.toast{background:rgba(6,18,30,.95);border:1px solid var(--line2);border-radius:10px;padding:10px 14px;box-shadow:var(--glow);font-size:13px;animation:fade .25s}
+.massmode .mark,.massmode button.primary{box-shadow:0 0 22px rgba(255,207,92,.6);border-color:var(--gold)}
+.massmode .hero{border-color:var(--gold)}
+.bgword{position:fixed;right:-10px;bottom:34px;z-index:0;font-size:120px;opacity:.06;pointer-events:none;font-weight:900;letter-spacing:2px}
+.hackbadge{display:inline-block;border:1px solid var(--gold);color:var(--gold);border-radius:99px;padding:4px 12px;font-size:11px;letter-spacing:2px;margin-top:8px}
+.dlg{margin-top:10px;border-left:3px solid var(--gold);padding:8px 12px;background:rgba(255,207,92,.07);font-size:13px}
+.dlg b{color:var(--gold)}
+#cinema{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;background:radial-gradient(800px 400px at 50% 20%,#3a2a08,#050302 70%);text-align:center}
+#cinema.on{display:flex;animation:fade .4s}
+#cinema h1{font-size:clamp(34px,7vw,72px);letter-spacing:6px;color:var(--gold);text-shadow:0 0 30px rgba(255,207,92,.8)}
+#cinema .sub{letter-spacing:4px;color:#ffe9b0}
+#blackbox{font-size:12px;line-height:1.7;max-height:150px;overflow:hidden}
+.probadges{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.probadge{font-size:11px;letter-spacing:1px;border:1px solid rgba(77,227,255,.35);border-radius:8px;padding:5px 10px;background:rgba(8,22,36,.85);color:#bfe9ff}
+.probadge b{color:var(--neon)}
+.fine{font-size:11px;color:var(--mut);line-height:1.7}
+table.use{width:100%;border-collapse:collapse;font-size:12px}
+table.use td,table.use th{border:1px solid var(--line);padding:6px 8px;text-align:left}
+table.use th{color:var(--cyan);letter-spacing:1px}
+@media(max-width:900px){
+  .grid{grid-template-columns:1fr}
+  .mapwrap{grid-template-columns:1fr}
+  .char{width:200px;opacity:.2}
+  .char.left{left:-60px} .char.right{right:-60px}
+  header{padding:10px}
+  main{padding:12px 10px 110px}
+}
+@media(max-width:560px){ .char{opacity:.14} }
+</style>
+</head>
+<body>
+<canvas id="rain"></canvas>
+<div class="vignette"></div>
+<div class="bgword">ഹോസ്റ്റൽ</div>
+<div style="position:relative;z-index:6;text-align:center;font-size:12px;letter-spacing:2px;padding:7px 10px;background:repeating-linear-gradient(45deg,#2a0e12,#2a0e12 12px,#1c060b 12px,#1c060b 24px);border-bottom:1px solid rgba(255,77,94,.5);color:#ffb3ba">⚠️ 100% USELESS PROJECT • DOES NOTHING USEFUL • WILL NOT FIX YOUR HOSTEL • JUDGES, PLEASE GIVE MARKS FOR CONFIDENCE ⚠️</div>
 
+<div id="boot"><div class="bootbox">
+<div style="letter-spacing:3px;color:var(--cyan);font-size:12px">NIGHTSHIFT SECURE BOOT v3.7</div>
+<pre id="bootTxt"></pre>
+<div class="bar"><i id="bootBar"></i></div>
+<div class="row"><button class="small" onclick="skipBoot()">SKIP [S]</button></div>
+</div></div>
+
+<header>
+  <div class="logo" id="logo" title="click 5x for mass entry">
+    <div class="mark">NS</div>
+    <div><h1>NIGHTSHIFT</h1><small>HOSTEL SURVIVAL OS</small></div>
+  </div>
+  <div class="hstats">
+    <div class="pill">⏱ <b id="clock">--:--:--</b> HST</div>
+    <div class="pill">SURVIVAL <b id="survTop">72%</b></div>
+    <button class="small" id="sndBtn" onclick="toggleSound()">SOUND: ON</button>
+    <button class="small" id="voiceBtn" onclick="toggleVoice()">VOICE: OFF</button>
+  </div>
+</header>
+
+<nav id="tabs"></nav>
+
+<main id="viewport">
+
+<!-- DASHBOARD -->
+<section class="page" id="p-dash">
+<div class="hero scanline">
+  <div class="char left"><svg viewBox="0 0 200 300"><defs><linearGradient id="g1" x1="0" x2="1"><stop offset="0" stop-color="#123a5a"/><stop offset="1" stop-color="#03101c"/></linearGradient><radialGradient id="rim1" cx=".7" cy=".3" r=".9"><stop offset="0" stop-color="#4de3ff" stop-opacity=".7"/><stop offset=".5" stop-color="transparent"/></radialGradient></defs><rect width="200" height="300" fill="url(#g1)"/><ellipse cx="100" cy="95" rx="38" ry="46" fill="#0e1e2e" stroke="#39ff88" stroke-opacity=".4"/><path d="M40 300 Q60 180 100 170 Q140 180 160 300Z" fill="#0a1826" stroke="#4de3ff" stroke-opacity=".35"/><circle cx="86" cy="92" r="3" fill="#39ff88"/><circle cx="114" cy="92" r="3" fill="#39ff88"/><path d="M85 118 Q100 128 115 118" stroke="#ffcf5c" fill="none" stroke-width="2"/><rect width="200" height="300" fill="url(#rim1)" opacity=".5"/><path d="M10 260 L60 240 L30 300Z" fill="#04141f" opacity=".8"/><path d="M150 40 Q170 90 185 130" stroke="#0e3a2a" stroke-width="8" fill="none"/></svg><div class="cap">UNIT MASS-01 // FICTIONAL LEGEND // DASHBOARD GUARD</div></div>
+  <div class="char right"><svg viewBox="0 0 200 300"><defs><linearGradient id="g1b" x1="0" x2="1"><stop offset="0" stop-color="#04141f"/><stop offset="1" stop-color="#0c3238"/></linearGradient></defs><rect width="200" height="300" fill="url(#g1b)"/><rect x="20" y="40" width="14" height="60" fill="#ffdf8a" opacity=".8"/><rect x="45" y="40" width="14" height="60" fill="#ffdf8a" opacity=".5"/><rect x="70" y="40" width="14" height="60" fill="#ffdf8a" opacity=".3"/><path d="M0 250 L200 240 L200 300 L0 300Z" fill="#02090f"/><path d="M30 120 Q50 90 70 120" stroke="#123" fill="none"/><ellipse cx="140" cy="150" rx="30" ry="38" fill="#0e1e2e" stroke="#ffcf5c" stroke-opacity=".4"/></svg><div class="cap">KERALA HOSTEL // BLOCK-C NIGHT // MONSOON WATCH</div></div>
+  <div class="content">
+    <div class="kicker">KERALA HOSTEL // AFTER DARK // CERTIFIED USELESS</div>
+    <h2>HOSTEL.<br><span>AFTER DARK.</span></h2>
+    <p class="mono">An operating system that solves zero problems. Mess still bad. Warden still coming. Attendance still 71%. Daa, this is our hostel life.</p>
+    <div class="hackbadge">100% USELESS • MANKATHON SPECIAL • USE AAYITT ONNUM ILLA • ഹോസ്റ്റൽ സർവൈവൽ (FAILS)</div>
+    <div class="probadges"><span class="probadge">ISO-<b>USELESS-9001</b> CERTIFIED</span><span class="probadge">SLA <b>0.00%</b></span><span class="probadge">UPTIME <b>12%</b> (LUNCH ONLY)</span><span class="probadge">SOC-2 = <b>SENSE OF CHAOS 2</b></span><span class="probadge">v9.9.9-<b>useless-stable</b></span></div>
+    <div class="row">
+      <button class="primary" onclick="go('mess')">ENTER MESS DECISION ENGINE</button>
+      <button onclick="go('chaos')">CHECK CHAOS LEVEL</button>
+      <button onclick="go('term')">OPEN TERMINAL</button>
+      <button class="primary" onclick="go('lab')">USELESS LAB 🧪</button>
+      <button onclick="massCinema()">🎬 MASS MODE</button>
+    </div>
+    <div class="grid">
+      <div class="card"><h3>HOSTEL SURVIVAL INDEX</h3><div class="stat" id="survBig">72%</div><div class="meter"><i id="survBar" style="width:72%"></i></div><p class="mono" id="survWhy">Calculated from wifi, chaya, warden proximity.</p></div>
+      <div class="card"><h3>LIVE TELEMETRY</h3><div id="tele">loading…</div></div>
+      <div class="card"><h3>SYSTEM STATUS</h3><div id="sysstat">ALL SYSTEMS UNHINGED BUT ONLINE</div><p class="mono">KSRTC STOP: NIGHTSHIFT HALT // last bus left without you.<br>PALMS: swaying // RAIN: committed // CHAYA: critical.</p></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- MESS -->
+<section class="page" id="p-mess">
+<div class="hero"><div class="char right"><svg viewBox="0 0 200 300"><rect width="200" height="300" fill="#0a1a26"/><ellipse cx="100" cy="120" rx="42" ry="50" fill="#102433" stroke="#39ff88" stroke-opacity=".4"/><path d="M60 300 Q80 200 100 195 Q120 200 140 300Z" fill="#0d2030"/><ellipse cx="100" cy="205" rx="30" ry="12" fill="#1c3a52"/><path d="M75 80 Q100 60 125 80" stroke="#ffcf5c" fill="none" stroke-width="3"/></svg><div class="cap">UNIT COMEDY-07 // MESS WARRIOR // FICTIONAL</div></div>
+<div class="content"><div class="kicker">MESS DECISION ENGINE</div><h2>EDO, <span>WHAT TO EAT?</span></h2>
+<p class="mono">Breakfast / Lunch / Dinner. Our algorithm has never eaten here. Trust it anyway.</p>
+<div class="grid" id="messCards"></div>
+<div class="row"><button class="primary" onclick="randMess()">RANDOMIZE MENU 🎲</button><button onclick="go('dash')">BACK</button></div>
+<p class="mono" id="messVerdict"></p>
+</div></div>
+</section>
+
+<!-- NOTICES -->
+<section class="page" id="p-notice">
+<div class="hero"><div class="char left"><svg viewBox="0 0 200 300"><rect width="200" height="300" fill="#081525"/><rect x="60" y="60" width="80" height="110" rx="10" fill="#0e2438" stroke="#4de3ff" stroke-opacity=".4"/><circle cx="100" cy="90" r="18" fill="#132c44"/><path d="M70 150 L130 150 L125 300 L75 300Z" fill="#0b1d2f"/></svg><div class="cap">UNIT WARDEN-02 // FICTIONAL ADMIN // VERY SERIOUS</div></div>
+<div class="content"><div class="kicker">HOSTEL NOTICES // BY ORDER</div><h2>NOTICE <span>BOARD.</span></h2><div class="grid" id="noticeGrid"></div>
+<div class="row"><button onclick="sfx('primary');toast('Notice #404 pinned: THIS NOTICE DOES NOT EXIST')">PIN FAKE NOTICE</button></div>
+</div></div>
+</section>
+
+<!-- ISSUE -->
+<section class="page" id="p-issue">
+<div class="hero scanline"><div class="char right"><svg viewBox="0 0 200 300"><rect width="200" height="300" fill="#06121e"/><ellipse cx="100" cy="110" rx="36" ry="44" fill="#0f2235" stroke="#4de3ff"/><rect x="78" y="95" width="44" height="14" rx="7" fill="#02080f" stroke="#39ff88"/><circle cx="100" cy="102" r="4" fill="#ff4d5e"/><path d="M60 300 L85 180 L115 180 L140 300Z" fill="#0a1a2a"/></svg><div class="cap">UNIT INTEL-03 // CHAIR CRIME DIVISION</div></div>
+<div class="content"><div class="kicker">ISSUE CENTER // FAKE INTELLIGENCE</div><h2>SERIOUSLY <span>STUPID CASES.</span></h2>
+<p class="mono">We investigate stupid problems with extreme seriousness.</p>
+<div class="row"><button class="primary" onclick="newIncident()">SCAN FOR NEW INCIDENT</button><button onclick="go('term')">ESCALATE TO TERMINAL</button></div>
+<div class="grid" id="issueGrid"></div>
+</div></div>
+</section>
+
+<!-- HR -->
+<section class="page" id="p-hr">
+<div class="hero"><div class="char left"><svg viewBox="0 0 200 300"><rect width="200" height="300" fill="#0a1624"/><ellipse cx="100" cy="100" rx="34" ry="42" fill="#112839"/><rect x="70" y="150" width="60" height="90" fill="#0d2030" stroke="#ffcf5c" stroke-opacity=".4"/><rect x="92" y="150" width="16" height="50" fill="#ffcf5c" opacity=".7"/></svg><div class="cap">UNIT HR-01 // FICTIONAL CORPORATE // NO MERCY</div></div>
+<div class="content"><div class="kicker">HOSTEL HR // HUMAN CHAOS RESOURCES</div><h2>PERFORMANCE <span>PARANOIA.</span></h2><div class="grid" id="hrGrid"></div>
+<div class="row"><button class="primary" onclick="fakeAppraisal()">FILE FAKE APPRAISAL</button></div>
+</div></div>
+</section>
+
+<!-- STUDY -->
+<section class="page" id="p-study">
+<div class="hero"><div class="char right"><svg viewBox="0 0 200 300"><rect width="200" height="300" fill="#071420"/><ellipse cx="100" cy="130" rx="38" ry="30" fill="#102434"/><circle cx="88" cy="126" r="5" fill="none" stroke="#ff8a94" stroke-width="2"/><circle cx="112" cy="126" r="5" fill="none" stroke="#ff8a94" stroke-width="2"/><path d="M60 300 Q100 210 140 300Z" fill="#0b1e30"/><rect x="55" y="170" width="90" height="10" fill="#4de3ff" opacity=".5"/></svg><div class="cap">UNIT PADIPPI-09 // EXHAUSTED SCHOLAR</div></div>
+<div class="content"><div class="kicker">STUDY OPERATIONS // PADIPPI PROTOCOL</div><h2>EXAM <span>TOMORROW?</span></h2>
+<div class="grid"><div class="card"><h3>FOCUS METER</h3><div class="stat" id="focusV">12%</div><div class="meter"><i id="focusBar" style="width:12%"></i></div><p class="mono">Motivation server: OFFLINE since 2019.</p></div>
+<div class="card"><h3>SYLLABUS SCAN</h3><div id="syllabus">Unit 1: done (accidentally)<br>Unit 2-8: undiscovered territory</div></div>
+<div class="card"><h3>EXCUSE ENGINE</h3><div id="excuse">Press generate.</div><div class="row"><button class="primary small" onclick="newExcuse()">GENERATE EXCUSE</button></div></div></div>
+<div class="row"><button class="primary" onclick="padippi()">INITIATE PADIPPI PROTOCOL</button></div><p class="mono" id="padippiOut"></p>
+</div></div>
+</section>
+
+<!-- MAP -->
+<section class="page" id="p-map">
+<div class="hero"><div class="char left"><svg viewBox="0 0 200 300"><rect width="200" height="300" fill="#071522"/><ellipse cx="100" cy="110" rx="34" ry="42" fill="#10283c" stroke="#4de3ff" stroke-opacity=".45"/><path d="M55 300 L80 190 L120 190 L145 300Z" fill="#0b1e30"/><circle cx="100" cy="108" r="3" fill="#39ff88"/></svg><div class="cap">UNIT SCOUT-06 // FICTIONAL LOCAL GUIDE</div></div><div class="content"><div class="kicker">HOSTEL INTELLIGENCE MAP // LIVE (ALLEGEDLY) // NOW 100% UNUSABLE</div><h2>KNOW <span>YOUR TERRAIN.</span></h2>
+<p class="mono">Warning: map rotates every time. Zones lie. North is emotional.</p>
+<div class="row"><button class="small" onclick="mapSpin(true)">🔄 SPIN MAP (USELESS)</button><button class="small" onclick="mapStop()">STOP (WON'T WORK)</button><button class="small dodge" onmouseover="dodgeBtn(this)" ontouchstart="dodgeBtn(this)" onclick="toast('You caught it. Useless victory. Next button now disabled.');uselessNext(this)">TRY TO CLICK ME</button></div>
+<div class="mapwrap"><div class="card"><div id="mapSpin"><svg viewBox="0 0 400 260" style="width:100%">
+<rect x="10" y="10" width="380" height="240" rx="12" fill="#04101c" stroke="#4de3ff" stroke-opacity=".3"/>
+<rect class="zone" data-z="Block A: snoring decibels exceed turbine limits. Room 204 has 4 chargers, 0 owners." x="30" y="30" width="110" height="70" rx="8"/><text x="40" y="65" fill="#d7e9e4" font-size="12">BLOCK A</text>
+<rect class="zone" data-z="Block B: lights-out resistance detected. Someone is ironing at 2AM. Why." x="155" y="30" width="110" height="70" rx="8"/><text x="165" y="65" fill="#d7e9e4" font-size="12">BLOCK B</text>
+<rect class="zone" data-z="Mess: queue instability at 98%. Parotta demand vs supply war ongoing." x="30" y="115" width="150" height="70" rx="8"/><text x="40" y="150" fill="#d7e9e4" font-size="12">MESS</text>
+<rect class="zone" data-z="KSRTC Stop / Nightshift Halt: last bus left. Auto driver quoting Mars rates." x="195" y="115" width="175" height="70" rx="8"/><text x="205" y="150" fill="#d7e9e4" font-size="12">BUS STOP</text>
+<rect class="zone" data-z="Terrace: suspicious academic activity. 3AM maggi smoke signals spotted." x="30" y="195" width="110" height="45" rx="8"/><text x="40" y="220" fill="#d7e9e4" font-size="11">TERRACE</text>
+<rect class="zone" data-z="Chaya Kada: friendship levels critical. Cutting chaya heals 40HP." x="155" y="195" width="215" height="45" rx="8"/><text x="165" y="220" fill="#d7e9e4" font-size="11">CHAYA KADA</text>
+</svg></div></div><div class="card"><h3>INTEL FEED (LIES)</h3><div id="mapIntel">Click a zone. It will miss. Map is spinning. North left.</div><p class="mono">PALMS: 14 swaying // DOGS: 3 on patrol // RAIN: loyal // MAP: USELESS.</p></div></div>
+</div></div>
+</section>
+
+<!-- CHAOS -->
+<section class="page" id="p-chaos">
+<div class="hero scanline"><div class="char left"><svg viewBox="0 0 200 300"><rect width="200" height="300" fill="#0c0a14"/><circle cx="70" cy="110" r="26" fill="#16283c"/><circle cx="120" cy="100" r="30" fill="#1a2f45" stroke="#ff4d5e" stroke-opacity=".5"/><circle cx="95" cy="150" r="24" fill="#102434"/><path d="M20 300 L60 190 L160 190 L180 300Z" fill="#0a1624"/></svg><div class="cap">UNIT CHAOS-CREW // FICTIONAL MOB // DO NOT APPROACH</div></div>
+<div class="content"><div class="kicker">CHAOS GENERATOR // CERTIFIED UNSTABLE</div><h2 id="chaosName">NORMAL <span>HOSTEL CONDITIONS</span></h2>
+<div class="card"><h3>CHAOS METER</h3><div class="stat" id="chaosV">LEVEL 2</div><div class="meter"><i id="chaosBar" style="width:40%"></i></div><p class="mono" id="chaosDesc">Someone is studying. Suspicious.</p></div>
+<div class="row"><button class="danger" onclick="genChaos()">GENERATE CHAOS ⚡</button></div>
+</div></div>
+</section>
+
+<!-- ASK -->
+<section class="page" id="p-ask">
+<div class="hero"><div class="char right"><svg viewBox="0 0 200 300"><rect width="200" height="300" fill="#081624"/><ellipse cx="100" cy="105" rx="36" ry="44" fill="#132c44" stroke="#ff8fc7" stroke-opacity=".5"/><path d="M65 300 Q100 190 135 300Z" fill="#14293e"/></svg><div class="cap">UNIT QUEEN-05 // FICTIONAL CHARISMATIC LEAD</div></div>
+<div class="content"><div class="kicker">ASK NIGHTSHIFT // ALL-KNOWING, MOSTLY WRONG</div><h2>CHODIKK, <span>WE ANSWER.</span></h2>
+<div class="row"><input id="askIn" placeholder="e.g. Will mess serve beef today? Where is my sock?"><button class="primary" onclick="askNS()">ASK</button></div>
+<div class="card" style="margin-top:12px"><div id="askOut">I am trained on 10,000 hostel nights. Ask anything.</div></div>
+</div></div>
+</section>
+
+<!-- TERMINAL -->
+<section class="page" id="p-term">
+<div class="hero"><div class="char left"><svg viewBox="0 0 200 300"><rect width="200" height="300" fill="#020c12"/><ellipse cx="100" cy="110" rx="34" ry="42" fill="#0d2233" stroke="#39ff88"/><rect x="70" y="100" width="60" height="22" rx="6" fill="#01060b" stroke="#39ff88"/><text x="78" y="116" fill="#39ff88" font-size="12">~/hostel</text></svg><div class="cap">UNIT HACKER-04 // FICTIONAL TECH // ROOT ACCESS</div></div>
+<div class="content"><div class="kicker">SYSTEM TERMINAL // TYPE 'help'</div><h2>sudo <span>make-me-funny</span></h2>
+<div id="termOut"></div><div class="row"><input id="termIn" placeholder="help, status, scan, chaos, mess, whoami, clear, sudo" onkeydown="if(event.key==='Enter')runTerm()"><button class="primary" onclick="runTerm()">RUN</button></div>
+</div></div>
+</section>
+
+<!-- EMERGENCY -->
+<section class="page" id="p-emg">
+<div class="hero"><div class="char right"><svg viewBox="0 0 200 300"><rect width="200" height="300" fill="#1a060b"/><ellipse cx="100" cy="110" rx="36" ry="44" fill="#2a0f16" stroke="#ff4d5e"/><path d="M60 300 L85 190 L115 190 L140 300Z" fill="#1c0a10"/><rect x="85" y="95" width="30" height="10" fill="#ff4d5e"/></svg><div class="cap">UNIT ALERT // FICTIONAL SIREN // RED MODE</div></div><div class="content"><div class="kicker">EMERGENCY // DO NOT PANIC (PANIC)</div><h2>RED <span>ALERT.</span></h2>
+<div class="grid">
+<div class="card"><h3>WARDEN RAID</h3><p>Footsteps detected. 98% match: rubber slippers.</p><button class="danger" onclick="emergency('WARDEN RAID DETECTED','Protocol: lights off, books open, snore naturally. Chaya cups hidden in 3..2..1')">TRIGGER</button></div>
+<div class="card"><h3>NO CHAYA</h3><p>Cutting chaya reserves at 0%. Friendship dropping.</p><button class="danger" onclick="emergency('CHAYA SHORTAGE','Protocol: walk to kada in rain. Sing anyway. Return heroes.')">TRIGGER</button></div>
+<div class="card"><h3>WATER OVER</h3><p>Tank empty. Bucket ownership dispute imminent.</p><button class="danger" onclick="emergency('WATER DEPLETED','Protocol: blame Block B. Negotiate bucket treaty. Pray for rain (already raining).')">TRIGGER</button></div>
+<div class="card"><h3>EXAM TOMORROW</h3><p>Syllabus not found. Motivation server offline.</p><button class="danger" onclick="emergency('EXAM IN 8 HOURS','Protocol: photostat diplomacy, all-night padippi, maggi IV drip.')">TRIGGER</button></div>
+</div><p class="mono" id="emgOut"></p>
+</div></div>
+</section>
+
+<!-- USELESS LAB -->
+<section class="page" id="p-lab">
+<div class="hero"><div class="char left"><svg viewBox="0 0 200 300"><rect width="200" height="300" fill="#0b1420"/><ellipse cx="100" cy="110" rx="36" ry="44" fill="#13293e" stroke="#39ff88" stroke-opacity=".5"/><path d="M70 160 h60 M85 175 h30" stroke="#ffcf5c" stroke-width="3"/></svg><div class="cap">UNIT LAB-00 // FICTIONAL USELESS SCIENTIST</div></div>
+<div class="content"><div class="kicker">USELESS LAB // HACKATHON GRADE NONSENSE</div><h2>100% <span>USELESS.</span></h2>
+<p class="mono">15 certified useless machines. No refunds. Judges love this.</p>
+<div class="row"><button class="primary" onclick="massCinema()">🎬 ACTIVATE MASS MODE</button></div>
+<div class="grid">
+<div class="card"><h3>1. ROOMMATE SCANNER</h3><div class="row"><input id="rm1" placeholder="Name 1"><input id="rm2" placeholder="Name 2"></div><div class="row"><button class="primary small" onclick="roomScan()">SCAN</button></div><div id="rmOut" class="mono">Enter two victims.</div></div>
+<div class="card"><h3>2. WHO ATE MY FOOD?</h3><div class="row"><select id="foodSel"><option>Chicken</option><option>Egg</option><option>Chocolate</option><option>Maggi</option></select><button class="primary small" onclick="foodCrime()">INVESTIGATE</button></div><div id="foodOut" class="mono">Select missing item.</div></div>
+<div class="card"><h3>3. MESS STOCK MARKET</h3><div id="stockOut">loading market…</div><div class="row"><button class="small" onclick="stockTick(true)">TRADE (FAKE)</button></div></div>
+<div class="card"><h3>4. HOSTEL WEATHER™</h3><div id="weaOut" class="mono">Not actual weather.</div><div class="row"><button class="small" onclick="hostelWeather()">FORECAST</button></div></div>
+<div class="card"><h3>5. SHOULD I GO TO CLASS?</h3><div class="row"><button class="danger" onclick="classAI()">SHOULD I GO?</button></div><div id="classOut" class="mono">AI is ready to disappoint.</div></div>
+<div class="card"><h3>6. CHARGER ECONOMY</h3><div class="mono">USB-C ₹4,200<br>iPhone ₹7,800<br>Micro USB ₹12<br>Your charger ₹∞</div><div class="row"><button class="small" onclick="chargerBlack()">TRACK MINE</button></div><div id="chgOut" class="mono"></div></div>
+<div class="card"><h3>7. 2AM PRODUCTIVITY</h3><div class="row"><button class="primary small" onclick="prodCheck()">AM I STUDYING?</button></div><div id="prodOut" class="mono">37 tabs open. We know.</div></div>
+<div class="card"><h3>8. HOSTEL NPC</h3><div class="row"><button class="small" onclick="npcGen()">SPAWN NPC</button></div><div id="npcOut" class="mono">No NPCs yet. Peaceful.</div></div>
+<div class="card"><h3>9. EXCUSE GENERATOR</h3><div class="row"><button class="small" onclick="newExcuse();document.getElementById('labExcuse').textContent=document.getElementById('excuse').textContent">GENERATE EXCUSE</button></div><div id="labExcuse" class="mono">Professor waiting…</div><div class="mono">Also in Study Ops.</div></div>
+<div class="card"><h3>10. WARDEN RADAR</h3><div class="stat" id="wardV">78%</div><div class="meter"><i id="wardBar" style="width:78%"></i></div><div id="wardTxt" class="mono">MOVEMENT DETECTED: Potential Warden. ALT+TAB.</div><div class="row"><button class="danger small" onclick="wardScan()">RE-SCAN</button></div></div>
+<div class="card"><h3>11. HOSTEL BLACK BOX</h3><div id="blackbox" class="mono"></div></div>
+<div class="card"><h3>12. ACADEMIC GPS</h3><div class="row"><button class="small" onclick="acadGPS()">NAVIGATE TO CLASS</button></div><div id="gpsOut" class="mono">120m. 2 min walk. 17 min human.</div></div>
+<div class="card"><h3>13. REPUTATION SCORE</h3><div class="row"><button class="small" onclick="repScore()">CHECK FAME</button></div><div id="repOut" class="mono">Unknown fresher energy.</div></div>
+<div class="card"><h3>14. LAST SEEN CHARGER</h3><div class="row"><button class="small" onclick="chargerMap()">TRACK CHARGER</button></div><div id="chgMapOut" class="mono">Last seen: Room 213.</div></div>
+<div class="card"><h3>16. HOSTEL IQ</h3><div class="row"><button class="small" onclick="hostelIQ('exam')">CAN I SURVIVE EXAM?</button><button class="small" onclick="hostelIQ('food')">SHOULD I ORDER FOOD?</button></div><div id="iqOut" class="mono">Ask a useless question. Get a confident wrong answer.</div></div>
+<div class="card"><h3>17. USELESS COMPLIANCE CERT</h3><div class="row"><input id="certName" placeholder="Team name for certificate"><button class="primary small" onclick="genCert()">ISSUE CERTIFICATE</button></div><div id="certOut" class="mono">ISO-USELESS-9001 auditor is asleep.</div></div>
+<div class="card"><h3>18. SLA CALCULATOR (ENTERPRISE)</h3><table class="use"><tr><th>Metric</th><th>Value</th></tr><tr><td>Promised uptime</td><td>99.99%</td></tr><tr><td>Delivered</td><td>12% (lunch)</td></tr><tr><td>Support response</td><td>Never (certified)</td></tr><tr><td>Refunds</td><td>₹0.00</td></tr></table><div class="row"><button class="small" onclick="calcSLA()">CALCULATE SLA</button></div><div id="slaOut" class="mono">Result always 0.00%. Enterprise guarantee.</div></div>
+<div class="card"><h3>19. EXPORT USELESS REPORT</h3><p class="fine">Generates a board-ready PDF-grade TXT that says nothing, professionally.</p><div class="row"><button class="primary small" onclick="exportReport()">DOWNLOAD REPORT</button><button class="small" onclick="fakeTicket()">RAISE TICKET (NOWHERE)</button></div><div id="ticketOut" class="mono">No tickets. Only chaya breaks.</div></div>
+<div class="card"><h3>20. CHANGELOG / ROADMAP</h3><div class="mono">v9.9.9: fixed nothing, broke chaya counter<br>v9.9.8: warden radar now 100% paranoid<br>v9.9.7: added more rain<br>ROADMAP: v10.0 — even more useless. ETA: after exams (never).</div></div>
+<div class="card"><h3>21. SNORE SCANNER 😴</h3><div class="stat" id="snoreDb">-- dB</div><div class="meter"><i id="snoreBar" style="width:10%"></i></div><div id="snoreOut" class="mono">Roommate asleep? Press scan. We judge professionally.</div><div class="row"><button class="danger small" onclick="snoreScan()">START SNORE SCAN</button></div></div>
+<div class="card"><h3>22. WASHROOM INTEL 🚿</h3><div id="washOut" class="mono">Trips today: unknown. Activities: suspicious.</div><div class="row"><button class="small" onclick="washLog()">LOG TRIP (FAKE)</button><button class="small" onclick="washReport()">FULL DAY REPORT</button></div></div>
+<div class="card"><h3>23. CLOTHES / BATH TRACKER 👕</h3><div id="clothOut" class="mono">Changed? Unconfirmed. Smell index: pending.</div><div class="row"><button class="small" onclick="clothTrack(true)">HE CHANGED 😇</button><button class="small" onclick="clothTrack(false)">DIDN'T CHANGE 💀</button></div></div>
+<div class="card"><h3>24. ROOMMATE DOSSIER 📁</h3><p class="fine">Combines snores + washroom + clothes + crimes into one certified useless file.</p><div class="row"><button class="primary small" onclick="dossier()">GENERATE DOSSIER</button></div><div id="dossierOut" class="mono">No victim selected. Use Roommate Scanner first. Or don't. Useless either way.</div></div>
+<div class="card"><h3>25. BUTTON MAZE 🖱️ (UNCLICKABLE)</h3><p class="fine">Get it right → next buttons die. Get it wrong → buzzer. Either way useless.</p><div class="maze" id="mazeBox"><div class="row"><button class="small" onclick="mazePick(this)">A</button><button class="small" onclick="mazePick(this)">B</button><button class="small dodge" onmouseover="dodgeBtn(this)" onclick="mazePick(this)">C (RUNS)</button></div></div><div id="mazeOut" class="mono">Round 1. One button is correct. Others are also useless.</div></div>
+</div>
+</div></div>
+</section>
+
+</main>
+
+<div id="cinema"><div><h1>NIGHTSHIFT</h1><div class="sub">MASS PROTOCOL ACTIVATED</div><div class="sub" id="cineStat" style="margin-top:12px">HOSTEL: ████████████████████ • MESS: UNDER CONTROL • WARDEN: UNKNOWN • CHAOS: 100%</div><div class="sub" style="margin-top:8px">MISSION: SURVIVE THE NIGHT • click anywhere to exit</div></div></div>
+<footer><span>● NIGHTSHIFT OS // USELESS BUILD • NO SUPPORT • NO REFUNDS</span><span id="ticker">initializing…</span></footer>
+<div id="toast"></div>
+
+<script>
+// ---------- utils + audio ----------
+let soundOn=true, actx=null, chaosLevel=2, logoClicks=0;
+function ac(){ if(!actx){ try{actx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){} } if(actx&&actx.state==='suspended')actx.resume(); return actx; }
+function tone(f,d,type,v,when){ if(!soundOn)return; const c=ac(); if(!c)return; const t=c.currentTime+(when||0); const o=c.createOscillator(),g=c.createGain(); o.type=type||'sine'; o.frequency.value=f; g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(v||.08,t+.01); g.gain.exponentialRampToValueAtTime(0.0001,t+d); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+d+.02); }
+function sfx(k){ document.addEventListener('pointerdown',()=>ac(),{once:true}); if(!soundOn)return;
+ if(k==='nav')tone(660,.07,'square',.04);
+ else if(k==='primary'){tone(520,.08,'sine',.07);tone(780,.09,'sine',.06,.06)}
+ else if(k==='random'){tone(300,.07,'sawtooth',.05);tone(500,.07,'sawtooth',.05,.07);tone(900,.1,'sine',.06,.14)}
+ else if(k==='term'){tone(880,.05,'square',.04)}
+ else if(k==='secret'){[523,659,784,1046,784,1046].forEach((f,i)=>tone(f,.12,'triangle',.07,i*.09))}
+ else if(k==='alarm'){tone(220,.3,'sawtooth',.09);tone(180,.3,'sawtooth',.09,.3)}
+ else if(k.indexOf('theme-')===0){playTheme(k.slice(6))}
+}
+// Original synth mass-BGMs per tab. 100% original, no AI voice, no movie audio, no actor voices.
+function playTheme(tab){
+ if(!soundOn)return;
+ // Try your own human recording first: dash.mp3, mess.mp3, notice.mp3... in same folder. Falls back to synth.
+ try{ const a=new Audio(tab+'.mp3'); a.volume=.9; a.play().catch(()=>playSynth(tab)); }catch(e){ playSynth(tab); }
+}
+function playSynth(tab){
+ const seq={
+  dash:[110,147,196,262,330,392,523,659,784], mess:[392,370,392,440,494,440,415,440],
+  notice:[220,220,262,220,196,220], issue:[196,208,220,233,247,262,294,330],
+  hr:[262,262,330,392,330,262], study:[330,294,262,220,196,174],
+  map:[523,659,523,659,784,659], chaos:[98,147,98,196,147,294,196,392,110],
+  ask:[392,440,494,587,659,784], term:[660,550,660,880,660,990,1320],
+  emg:[330,262,330,262,330,392,523], lab:[523,440,523,659,523,784,659,880]
+ }[tab]||[600,800];
+ const type=tab==='chaos'||tab==='emg'?'sawtooth':tab==='term'||tab==='map'?'square':'triangle';
+ seq.forEach((f,i)=>{ tone(f,.16,type,.07,i*.12); if(tab==='dash'||tab==='chaos')tone(f/2,.2,'sine',.08,i*.12); });
+}
+// Fictional archetype taglines. Original lines, not movie dialogues. Not affiliated with real actors.
+const TABDLG={
+ dash:'<b>MASS-01 (legend-style):</b> “Hostel aanu playground. Night aanu game time.” — original line',
+ mess:'<b>COMEDY-07 (canteen-style):</b> “Chaya undo? Then life undo.” — original line',
+ notice:'<b>WARDEN-02 (strict-style):</b> “Rules aanu. But rain aanu bigger.” — original line',
+ issue:'<b>INTEL-03 (detective-style):</b> “Chair leg #3... nammal investigate cheyyum.” — original line',
+ hr:'<b>HR-01 (serious-style):</b> “Discipline important. Chaya break mandatory.” — original line',
+ study:'<b>PADIPPI-09 (senior-style):</b> “Padippi tonight. Reels... after one more.” — original line',
+ map:'<b>SCOUT-06 (local-style):</b> “KSRTC vannilla. Auto venam? Rate double.” — original line',
+ chaos:'<b>CHAOS-CREW ( Interval-style):</b> “Peace? Athu hostelil illa mone.” — original line',
+ ask:'<b>QUEEN-05 (charismatic-style):</b> “Chodikku. Answer mass aayirikkum.” — original line',
+ term:'<b>HACKER-04 (tech-style):</b> “Sudo alla... warden aanu root.” — original line',
+ emg:'<b>ALERT-UNIT:</b> “Panic venda. Chaya kudikku. Plan cheyyam.” — original line',
+ lab:'<b>LAB-00 (mad-scientist-style):</b> “15 machines. Zero use. Full marks.” — original line'
+};
+// Full spoken lines per tab. Original Manglish lines, spoken by browser voice, not actor voices.
+const TABVOICE={
+ dash:'Hostel aanu playground. Night aanu game time. NIGHTSHIFT online. Warden far. Chaya near. Rain committed. Daa, this is our hostel life.',
+ mess:'Edo, what to eat? Breakfast, lunch, dinner randomized. Puttu, porotta, maggi, mystery sambar. Chaya undo? Then life undo.',
+ notice:'Notice board. By order. Water timing morning five to seven. Room inspection Sunday. Hide induction stove, hide maggi, study face on.',
+ issue:'Issue center. Serious investigation. Chair critical state. Charger dispute. Sock missing. Wifi fast only during exams. Suspect everyone.',
+ hr:'Hostel HR. Human chaos resources. Chief warden patrol fourteen kilometer. Mess commander parotta expert. Wifi warlord one bar minimum.',
+ study:'Study operations. Padippi protocol. Exam tomorrow, syllabus undiscovered. Motivation server offline since first year. Maggi IV ready.',
+ map:'Intelligence map. Block A snoring. Block B ironing at 2 AM. Mess queue around palm tree. KSRTC gone. Chaya kada healing point.',
+ chaos:'Chaos generator. Suspiciously peaceful to hostel has left reality. Peace? Athu hostelil illa mone. Generate at your own risk.',
+ ask:'Ask NIGHTSHIFT. Chodikku. Answer mass aayirikkum. Trained on ten thousand hostel nights. Mostly wrong, fully confident.',
+ term:'System terminal. Type help. Sudo alla, warden aanu root. Scan, chaos, mess. Hacker mode on. Rain proof. Warden proof mostly.',
+ emg:'Red alert. Emergency. Warden raid, no chaya, water over, exam tomorrow. Panic venda. Chaya kudikku. Plan cheyyam.',
+ lab:'Useless lab. Fifteen machines. Zero use. Full marks. Roommate scanner, food crime, stock market, warden radar. Pure nonsense.'
+};
+let voiceOn=false;
+// Per-character voice styling. Same browser voice, different pitch/rate = distinct characters. No actor cloning.
+const VOICESTYLE={dash:{p:.6,r:.9},mess:{p:1.3,r:1.05},notice:{p:.5,r:.85},issue:{p:.7,r:.95},hr:{p:.55,r:.9},study:{p:1.0,r:.9},map:{p:.9,r:1.0},chaos:{p:1.4,r:1.1},ask:{p:1.1,r:.95},term:{p:.8,r:1.0},emg:{p:.6,r:1.0},lab:{p:1.2,r:1.0}};
+function speak(t,tab){ if(!voiceOn)return; try{ if(!('speechSynthesis' in window)){toast('Voice not supported in this browser. Use Chrome/Edge.');return;} window.speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.lang='en-IN'; const st=VOICESTYLE[tab]||{p:.8,r:.95}; u.pitch=st.p; u.rate=st.r; u.volume=1; window.speechSynthesis.speak(u);}catch(e){} }
+function replayDlg(){ const on=document.querySelector('.page.on'); if(!on)return; const id=on.id.replace('p-',''); sfx('theme-'+id); if(voiceOn&&TABVOICE[id])speak(TABVOICE[id],id); }
+function toggleVoice(){ voiceOn=!voiceOn; document.getElementById('voiceBtn').textContent='VOICE: '+(voiceOn?'ON':'OFF'); if(!voiceOn){try{window.speechSynthesis.cancel()}catch(e){}} else {speak('Voice online. Mass entry ready.','dash')} }
+function toggleSound(){ soundOn=!soundOn; document.getElementById('sndBtn').textContent='SOUND: '+(soundOn?'ON':'OFF'); if(soundOn)sfx('primary'); }
+document.addEventListener('pointerdown',()=>ac(),{once:true});
+function toast(m){ const d=document.createElement('div'); d.className='toast'; d.textContent=m; document.getElementById('toast').appendChild(d); setTimeout(()=>d.remove(),3200); }
+
+// ---------- nav ----------
+const PAGES=[['dash','DASHBOARD'],['mess','MESS'],['notice','NOTICES'],['issue','ISSUE CENTER'],['hr','HOSTEL HR'],['study','STUDY OPS'],['map','INTEL MAP'],['chaos','CHAOS'],['ask','ASK NIGHTSHIFT'],['term','TERMINAL'],['emg','EMERGENCY'],['lab','USELESS LAB']];
+const tabs=document.getElementById('tabs');
+PAGES.forEach(([id,label],i)=>{ const b=document.createElement('button'); b.textContent=(i+1)+'. '+label; b.id='t-'+id; b.onclick=()=>go(id); tabs.appendChild(b); });
+function go(id){ sfx('nav'); sfx('theme-'+id); if(voiceOn&&TABVOICE[id])setTimeout(()=>speak(TABVOICE[id],id),350); document.querySelectorAll('.page').forEach(p=>p.classList.remove('on')); document.getElementById('p-'+id).classList.add('on'); document.querySelectorAll('nav button').forEach(b=>b.classList.remove('on')); const t=document.getElementById('t-'+id); if(t)t.classList.add('on'); const dlg=TABDLG[id]; let old=document.getElementById('tabDlg'); if(old)old.remove(); if(dlg){ const d=document.createElement('div'); d.id='tabDlg'; d.className='dlg'; d.innerHTML='🎬 CHARACTER DIALOGUE: '+dlg+'<div class="row"><button class="small primary" onclick="replayDlg()">🔊 PLAY MASS BGM AGAIN</button></div><div class="mono">Original synth BGM auto-plays • SOUND ON • VOICE is OFF (no AI voice) • optional: add dash.mp3/mess.mp3/notice.mp3... for your own human recordings</div>'; const sec=document.getElementById('p-'+id); sec.insertBefore(d,sec.firstChild.nextSibling||sec.firstChild); } window.scrollTo({top:0,behavior:'smooth'}); }
+
+// ---------- clock / telemetry ----------
+let tele={wifi:34,queue:62,warden:22,chaya:41,temp:27,motivation:4};
+function tickClock(){ const d=new Date(); document.getElementById('clock').textContent=d.toLocaleTimeString(); }
+setInterval(tickClock,1000); tickClock();
+function updTele(){ for(const k in tele){ tele[k]+= (Math.random()*10-5); } tele.wifi=Math.max(2,Math.min(98,tele.wifi)); tele.queue=Math.max(0,Math.min(100,tele.queue)); tele.warden=Math.max(0,Math.min(100,tele.warden)); tele.chaya=Math.max(0,Math.min(100,tele.chaya)); tele.motivation=Math.max(0,Math.min(100,tele.motivation));
+ const surv=Math.round(100-(tele.queue*.25+tele.warden*.35+(100-tele.chaya)*.2+(100-tele.wifi)*.1+chaosLevel*4)); const s=Math.max(3,Math.min(99,surv));
+ document.getElementById('survTop').textContent=s+'%'; document.getElementById('survBig').textContent=s+'%'; document.getElementById('survBar').style.width=s+'%';
+ document.getElementById('survWhy').textContent = s>75?'UselessLuck high. Still useless. Go drink chaya.':s>45?'Survivable but pointless. Avoid Block B bathrooms. And responsibilities.':'Critical. This OS cannot help you. It never could.';
+ document.getElementById('tele').innerHTML=`WIFI <b>${Math.round(tele.wifi)}%</b> (studying lowers it)<br>MESS QUEUE <b>${Math.round(tele.queue)}%</b><br>WARDEN PROXIMITY <b>${Math.round(tele.warden)}%</b><br>CHAYA RESERVE <b>${Math.round(tele.chaya)}%</b><br>MOTIVATION <b>${Math.round(tele.motivation)}%</b> (offline)`;
+ document.getElementById('ticker').textContent=`WIFI ${Math.round(tele.wifi)}% // QUEUE ${Math.round(tele.queue)}% // WARDEN ${Math.round(tele.warden)}m // CHAYA ${Math.round(tele.chaya)}% // RAIN: YES // PALMS: SWAYING // KSRTC: GONE // ${new Date().toLocaleTimeString()}`;
+}
+setInterval(updTele,2500); updTele();
+
+// ---------- USELESS MESS (non-eating menu + pic reveal) ----------
+const BF=[['Bucket Biryani','🪣','leftover water + hope'],['Slipper Fry','🩴','left, well-roasted'],['Charger Chutney','🔌','USB-C grind, spicy shock'],['Sock Sambar','🧦','left sock, week-old'],['Pillow Porotta','🛏️','extra cotton, no maida'],['Tubelight Tiffin','💡','glows, not edible'],['Attendance Adai','📋','71% crispy'],['Mosquito Meals','🦟','protein, angry'],['Broom Bajji','🧹','swept fresh'],['Newspaper Noodles','📰','yesterday headlines'],['Lock curry','🔒','room locked, taste locked'],['Rainwater Rasam','🌧️','collected from terrace leak']];
+const LN=[['Warden Lecture Soup','👞','rubber slipper tadka'],['Fan-speed Fried Rice','🌀','helicopter mode'],['Bed-sheet Biryani','🛌','unwashed since Onam'],['Bucket Bhaji','🪣','red bucket special'],['Chappal Chops','🩴','pair missing'],['Mop Masala','🧽','floor flavour'],['Switch-board Samosa','🔌','440V crunchy'],['Pigeon Pulao','🐦','terrace caught'],['Dustbin Dal','🗑️','segregated'],['Helmet Halwa','🪖','warden patrol sweet'],['Keychain Khichdi','🔑','lost + found mix'],['Notice-board Noodles','📜','rules + glue']];
+const DN=[['Midnight Maggi (imaginary)','👻','smell only'],['Ghost Ghee Roast','👻','no ghost, no ghee'],['Cockroach 65','🪳','extra leg piece'],['Lizard Lollipop','🦎','wall special'],['Spider Samosa','🕷️','8-leg piece'],['Rat Rava','🐀','room 305 pet'],['Fungus Fry','🍄','bathroom harvest'],['Mold Masala Dosa','🦠','green crispy'],['Drainage Payasam','🚰','sweet + regret'],['Shoe Sole Sadhya','👟','on banana leaf (leaf also shoe)'],['Timetable Thoran','📅','exam + coconut'],['Mosquito-net Meals','🦟','eat inside net, share with 40']];
+const VERD=['Verdict: INEDIBLE. Call home crying.','Verdict: Do NOT eat. Click pic to suffer visually.','Verdict: Smell from 10m. Taste from next birth.','Verdict: Warden also refused. Historic moment.','Verdict: Feed to Block B dog. Dog refused.','Verdict: Better to eat attendance sheet.','Verdict: Chaya chettan said "enthada ith".','Verdict: Pappadam cannot fix this. Nothing can.'];
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+let MESSSTATE=[];
+function randMess(){ sfx('random'); MESSSTATE=[pick(BF),pick(LN),pick(DN)]; const v=pick(VERD); const titles=['BREAKFAST (DO NOT EAT)','LUNCH (DO NOT EAT)','DINNER (DO NOT EAT)'];
+ document.getElementById('messCards').innerHTML=MESSSTATE.map((x,i)=>`<div class="card" onclick="showMessPic(${i})" style="cursor:pointer"><h3>${titles[i]}</h3><div style="font-size:15px;font-weight:700">${x[1]} ${x[0]}</div><div class="mono">${x[2]}</div><span class="tag">RANDOMIZED • INEDIBLE</span> <span class="tag">CLICK FOR PIC 📸</span><div id="mpic${i}" style="display:none;text-align:center;margin-top:8px;border:1px dashed var(--line2);border-radius:10px;padding:10px"></div></div>`).join('');
+ document.getElementById('messVerdict').textContent=v+' (Click any card to see the horror pic.)';
+}
+function showMessPic(i){ sfx('primary'); const x=MESSSTATE[i]; const el=document.getElementById('mpic'+i); if(!el)return;
+ const open=el.style.display!=='none';
+ document.querySelectorAll('[id^="mpic"]').forEach(d=>d.style.display='none');
+ if(open)return; el.style.display='block';
+ el.innerHTML=`<div style="font-size:72px;line-height:1">${x[1]}</div><div style="font-weight:900;margin-top:6px">${x[0]}</div><div class="mono">${x[2]} • 100% non-veg? No. 100% non-food.</div><div class="mono">Smell radius: 10m • Edibility: 0% • Comedy: 100%</div>`; }
+randMess();
+
+// ---------- notices ----------
+const NOTICES=[['WATER TIMING','Morning 5-7. Evening ghosts only. Buckets will be judged.','HIGH'],['MESS FEE','Pay before 10th or eat sympathy. UPI + cash + excuses accepted (2/3).','CRITICAL'],['ROOM INSPECTION','Sunday 10AM. Hide induction stove, hide Maggi, hide yourself if needed.','MEDIUM'],['WIFI DOWN','Router is tired. It has seen too much. Reboot with prayer.','HIGH'],['CULTURAL FEST','Dance, drama, dulquer-lookalike contest. Block C favourite to win chaos.','LOW'],['LOST & FOUND','One sock (left), one charger (not yours), one motivation (expired 2021). Claim at warden office.','LOW']];
+document.getElementById('noticeGrid').innerHTML=NOTICES.map(([t,d,s])=>`<div class="card"><h3>${t}</h3><p>${d}</p><span class="tag">${s}</span></div>`).join('');
+
+// ---------- issues ----------
+let INC=[['NS-101','CHAIR HAS ENTERED A CRITICAL STATE','CRIT','Leg 3 staging rebellion.'],['NS-102','CHARGER OWNERSHIP DISPUTE DETECTED','HIGH','Two names written. Both fake.'],['NS-103','SOCK LOCATION MISMATCH','LOW','Left sock in Block A, right sock living its own life.'],['NS-104','WIFI PRODUCTIVITY ANOMALY','HIGH','Wifi fast only during exams. Sus.'],['NS-105','MESS QUEUE INSTABILITY','HIGH','Queue curves around palm tree.'],['NS-106','SUSPICIOUS ACADEMIC ACTIVITY','MEDIUM','Someone opened a textbook voluntarily.'],['NS-107','MYSTERY BOTTLE DETECTED','CRIT','Label says water. Trust: 0%.'],['NS-108','BED OCCUPANCY ERROR','LOW','Bed occupied by 3 people + 1 guitar.'],['NS-109','LIGHTS-OUT RESISTANCE DETECTED','MEDIUM','Room 305 sun still on at 3AM.'],['NS-110','MOTIVATION SERVER OFFLINE','CRIT','Ping failed since first year.']];
+function renderIssues(){ document.getElementById('issueGrid').innerHTML=INC.slice(-6).reverse().map(([id,t,s,d])=>`<div class="card"><h3>${id}</h3><p><b>${t}</b><br><span class="mono">${d}</span></p><span class="sev ${s==='CRIT'?'s-crit':s==='HIGH'?'s-high':'s-low'}">${s}</span> <span class="tag">INVESTIGATING</span></div>`).join(''); }
+renderIssues();
+const EXTRA=[['BEDSHEET ENTANGLEMENT CRISIS','Lungi vs bedsheet jurisdictional clash.'],['CHAYA TEMPERATURE SCANDAL','Served lukewarm. Streets demand justice.'],['BUCKET THEFT RING EXPOSED','Red bucket seen in 3 bathrooms simultaneously.'],['FAN SPEED CONSPIRACY','Fan has only 2 speeds: helicopter and off.'],['PILLOW COLD-SIDE SHORTAGE','Both sides warm. Physics broken.'],['AUTORICKSHAW PRICE ANOMALY','2km = 1 semester fee.']];
+function newIncident(){ sfx('random'); const e=pick(EXTRA); const id='NS-'+(111+Math.floor(Math.random()*800)); INC.push([id,e[0],pick(['CRIT','HIGH','MEDIUM','LOW']),e[1]]); renderIssues(); toast('New case filed: '+id); }
+
+// ---------- HR ----------
+const HR=[['CHIEF WARDEN (FICTIONAL)','Patrols: 14km/night // Slipper DB: 98% accuracy','KPI: catches 3 Maggi per week'],['MESS COMMANDER','Parotta flip success: 99% // Sambar consistency: variable','KPI: queue < 40min (dream)'],['WIFI WARLORD','Uptime: during your sleep only // Reboot mantra certified','KPI: 1 bar minimum'],['CHAYA MINISTER','Cutting precision: surgical // Gossip bandwidth: unlimited','KPI: friendship + daily']];
+document.getElementById('hrGrid').innerHTML=HR.map(([n,r,k])=>`<div class="card"><h3>${n}</h3><p>${r}<br><span class="mono">${k}</span></p></div>`).join('');
+function fakeAppraisal(){ sfx('primary'); toast(pick(['Appraisal filed: hostel survives because of you (allegedly).','Rating: 5 stars for maggi hiding. 1 star for attendance.','Promotion: from bed to chair. Congratulations.','HR says: take rest. Exam says: lol.'])) }
+
+// ---------- study ----------
+function newExcuse(){ sfx('random'); document.getElementById('excuse').textContent=pick(['Wifi went for tea.','Roommate was breathing loudly.','Motivation server timed out.','I was researching... hostel architecture (reels).','Pen lost. Then willpower lost.','It rained. Rain = sleep protocol.']); }
+function padippi(){ sfx('primary'); let p=0; const o=document.getElementById('padippiOut'); o.textContent='Padippi protocol starting... closing reels... opening book (upside down)...'; const iv=setInterval(()=>{ p+=Math.random()*22; document.getElementById('focusV').textContent=Math.min(99,Math.round(12+p))+'%'; document.getElementById('focusBar').style.width=Math.min(99,12+p)+'%'; if(p>=80){clearInterval(iv); o.textContent='Padippi complete: 2 pages read, 47 pages daydreamed, 1 Maggi consumed. CGPA saved (emotionally).'; sfx('secret');} },500); }
+
+// ---------- USELESS MAP (rotates, lies, dodges) ----------
+let mapDeg=0, mapMisses=0;
+function mapSpin(loud){ if(loud)sfx('random'); mapDeg+=90+Math.floor(Math.random()*180); const el=document.getElementById('mapSpin'); if(el)el.style.transform=`rotate(${mapDeg}deg)`; }
+function mapStop(){ sfx('alarm'); toast("STOP button doesn't work. Map keeps spinning. Useless certified."); mapSpin(false); }
+setInterval(()=>{ if(document.getElementById('p-map').classList.contains('on'))mapSpin(false); },5000);
+document.querySelectorAll('.zone').forEach(z=>z.addEventListener('click',()=>{ sfx('primary'); mapMisses++; mapSpin(false);
+ const lies=['MISSED! Map rotated mid-click. Block A is now in the sea.','WRONG ZONE. You clicked Chaya Kada, got Warden office. Useless.','Intel corrupted by rain. Try again (will fail again).','Zone moved. Zones do that here.','GPS says you are in the mess. You are in bed.'];
+ document.getElementById('mapIntel').innerHTML=`» ${pick(lies)}<br><span class="mono">Actual data: ${z.dataset.z} (probably false too) • Misses: ${mapMisses}</span>`; }));
+function dodgeBtn(b){ if(b.disabled)return; sfx('nav'); b.style.position='relative';
+ b.style.left=(Math.random()*120-60)+'px'; b.style.top=(Math.random()*40-20)+'px';
+ b.dataset.dodges=(parseInt(b.dataset.dodges||'0')+1);
+ if(parseInt(b.dataset.dodges)>=3){ b.textContent='GAVE UP. USELESS.'; b.disabled=true; toast('Button gave up. Next button also useless.'); } }
+function uselessNext(btn){ const sec=btn.closest('section')||document; const btns=[...sec.querySelectorAll('button:not(:disabled)')];
+ btns.forEach((b,i)=>{ if(b!==btn&&i%2===0){ b.disabled=true; setTimeout(()=>{b.disabled=false;},4000); } });
+ toast('Correct! Reward: next buttons disabled for 4s. Useless!'); }
+
+// ---------- chaos ----------
+const CHAOS=[['SUSPICIOUSLY PEACEFUL','LEVEL 0','Everyone sleeping before 11PM. Something is very wrong.','#39ff88',8],['LOW CHAOS','LEVEL 1','Only one bucket missing. Manageable.','#4de3ff',22],['NORMAL HOSTEL CONDITIONS','LEVEL 2','Maggi smoke + loud speaker + last-minute record writing. Home.','#ffcf5c',42],['MODERATELY UNHINGED','LEVEL 3','DJ + dance in corridor. Warden 200m away. Countdown live.','#ffb454',65],['HIGH CHAOS','LEVEL 4','Water fight across blocks. WiFi sacrificed. Chaya emergency.','#ff7a5c',85],['HOSTEL HAS LEFT REALITY','LEVEL 5','KSRTC bus in terrace. Palms DJing. Exams cancelled by rain gods.','#ff4d5e',100]];
+function genChaos(){ sfx('random'); chaosLevel=Math.floor(Math.random()*6); const [n,l,d,c,w]=CHAOS[chaosLevel];
+ const h=document.querySelector('#p-chaos .hero'); h.classList.remove('shake'); void h.offsetWidth; h.classList.add('shake');
+ document.getElementById('chaosName').innerHTML=n+' <span>'+l+'</span>'; document.getElementById('chaosV').textContent=l; document.getElementById('chaosDesc').textContent=d;
+ document.getElementById('chaosBar').style.width=w+'%'; document.getElementById('chaosBar').style.background=c; updTele();
+ if(chaosLevel>=4)sfx('alarm'); toast('Chaos updated: '+n);
+}
+document.getElementById('chaosBar').style.background='#ffcf5c';
+
+// ---------- ask ----------
+const ANSWERS=['As your warden says: no. As your friend says: vaa, povam.','Sock is in the washing machine dimension. It returns when exams end.','Mess will serve chicken when KSRTC flies. So... pack maggi.','Sleep at 3AM, wake at 7AM, blame wifi. Classic. Works 0% of time, every time.','Ask chaya chettan. He knows who stole your charger, your CGPA story, and your future.','Solution: cutting chaya + rain + terrace talk. 90% problems dissolve. 10% become stories.','Warden proximity high. Switch to book tab. Nod sincerely. Breathe academically.','That sound at night? Just Block B learning guitar. Or ghost learningleyball. Either way, sleep.','Money over by 20th? Normal hostel thermodynamics. Borrow, share, survive, repeat.','Exam tomorrow? Photostat shop is the real university. Go now. Run.','Love the mass entry energy. But first: attendance 75% daa.','Chaya solves homesickness. Second chaya solves first chaya overthinking.'];
+function askNS(){ sfx('primary'); const q=document.getElementById('askIn').value||'...'; const a=pick(ANSWERS); let i=0; const o=document.getElementById('askOut'); o.textContent='Consulting hostel spirits about: "'+q+'" ... '; const iv=setInterval(()=>{ o.textContent+=a[i++]||''; if(i>=a.length)clearInterval(iv); },18); }
+
+// ---------- terminal ----------
+const termOut=document.getElementById('termOut');
+function tprint(h,cls){ const d=document.createElement('div'); if(cls)d.className=cls; d.innerHTML=h; termOut.appendChild(d); termOut.scrollTop=termOut.scrollHeight; }
+tprint('NIGHTSHIFT TERMINAL v3.7 — type <b>help</b> // rain-proof // warden-proof (mostly)','c');
+function runTerm(){ const inp=document.getElementById('termIn'); const raw=(inp.value||'').trim(); inp.value=''; if(!raw)return; sfx('term'); tprint('&gt; '+raw.replace(/</g,'&lt;')); const c=raw.toLowerCase();
+ if(c==='help')tprint('cmds: <span class="g">help status scan chaos mess whoami clear sudo</span> + secrets: <span class="c">chaya warden lalettan mammukka dulquer ksrtc maggi</span>');
+ else if(c==='status')tprint(`SURVIVAL ${document.getElementById('survTop').textContent} // WIFI ${Math.round(tele.wifi)}% // WARDEN ${Math.round(tele.warden)}% // CHAOS LEVEL ${chaosLevel}`,'g');
+ else if(c==='scan'){tprint('scanning rooms...','c'); setTimeout(()=>{newIncident(); tprint('1 new incident filed. You are welcome.','r')},600);}
+ else if(c==='chaos'){genChaos(); tprint('chaos set to '+CHAOS[chaosLevel][0],'r');}
+ else if(c==='mess'){randMess(); tprint('mess randomized. Verdict: '+document.getElementById('messVerdict').textContent,'g'); go('mess');}
+ else if(c==='whoami')tprint('you: legendary backbencher, room 305, chaya debt ₹47','g');
+ else if(c==='clear')termOut.innerHTML='';
+ else if(c==='sudo')tprint('permission denied: warden is sudo.','r');
+ else if(c.includes('chaya')){tprint('chaya protocol: 2 cutting, 1 pazhampori, rain view. Healing +100.','g'); sfx('secret');}
+ else if(c.includes('warden')){tprint('WARNING: warden proximity rising. Alt-tab to notes. Look sincere.','r'); sfx('alarm');}
+ else if(c.includes('lalettan')||c.includes('mammukka')||c.includes('dulquer')){tprint('MASS ENTRY DETECTED. Fictional legend mode: background score intensifies.','g'); sfx('secret'); massMode();}
+ else if(c.includes('ksrtc'))tprint('KSRTC: horn heard at 2AM. Bus did not stop. It never stops. Like your backlog.','c');
+ else if(c.includes('maggi'))tprint('maggi at 2AM = 5-star Michelin hostel dining. Warden disagreement noted.','g');
+ else tprint('unknown cmd: '+c.replace(/</g,'&lt;')+'. Try help.','r');
+}
+
+// ---------- USELESS LAB (file2.txt) ----------
+function roomScan(){ sfx('random'); const a=(document.getElementById('rm1').value||'Roommate A'), b=(document.getElementById('rm2').value||'Roommate B');
+ const r=(n)=>Math.floor(Math.random()*n);
+ document.getElementById('rmOut').innerHTML=`${a} × ${b}<br>Sleep: ${r(30)}% • Fan: ${40+r(60)}%<br>Charger theft risk: CRITICAL<br>Snoring tolerance: FAILED<br><b>FINAL: DO NOT SHARE ROOM</b>`; }
+function foodCrime(){ sfx('random'); const item=document.getElementById('foodSel').value;
+ document.getElementById('foodOut').innerHTML=`ITEM: ${item}<br>SUSPECT: Room ${200+Math.floor(Math.random()*15)}<br>MOTIVE: Hunger<br>EVIDENCE: One suspicious spoon<br><b>CONCLUSION: Bro definitely ate it.</b>`; }
+let STOCKS=[['CHICKEN CURRY',34],['DAL',-72],['PUTTU',2],['UNKNOWN GRAVY',0]];
+function stockTick(loud){ if(loud){sfx('random'); toast('Trade failed. Money converted to chaya. Useless profit: -100%.');} STOCKS=STOCKS.map(([n,v])=>[n,Math.max(-95,Math.min(120,v+Math.round(Math.random()*24-12)))]);
+ document.getElementById('stockOut').innerHTML=STOCKS.map(([n,v])=>`${n} ${v>0?'↑ +'+v+'%':v<0?'↓ '+v+'%':'→ Stable'}${n.includes('GRAVY')?' ⚠️ HALTED':''}`).join('<br>'); }
+stockTick(false); setInterval(()=>{ if(document.getElementById('p-lab').classList.contains('on'))stockTick(false); },4000);
+function hostelWeather(){ sfx('random'); document.getElementById('weaOut').innerHTML=`ROOM 304: ${70+Math.floor(Math.random()*25)}% chance charger asked<br>MESS: ${5+Math.floor(Math.random()*20)}% edible<br>CORRIDOR: warden appearance HIGH<br>RAIN: YES. Always yes.`; }
+function classAI(){ sfx('random'); document.getElementById('classOut').innerHTML=`Attendance 71% • Sleep 23% • Motivation -8% • 143m<br><b>VERDICT: NO. NEVER. (This AI failed 3 subjects.)</b><br>Action: open laptop, stare at wallpaper, feel guilty uselessly.`; }
+function chargerBlack(){ sfx('alarm'); document.getElementById('chgOut').textContent='⚠️ YOUR CHARGER HAS ENTERED THE BLACK MARKET. Recovery chance: 0%. This tracker only watches it leave.'; }
+function prodCheck(){ sfx('random'); document.getElementById('prodOut').innerHTML=`Tabs 37 • YouTube 4 • PDF opened 1 • Read 0%<br><b>PRODUCTIVITY: DECORATIVE</b>`; }
+function npcGen(){ sfx('random'); const names=['Rahul','Adhi','Vishnu','Fahad-lookalike','Tea-stall philosopher','Bathroom singer']; const traits=['Appearing whenever food arrives','Asking one minute charger','Knowing warden patrol timings','Sleeping in all positions','Fixing nothing, suggesting everything'];
+ document.getElementById('npcOut').innerHTML=`NPC #${String(Math.floor(Math.random()*900)+10)}<br>Name: ${pick(names)}<br>Known for: ${pick(traits)}<br>Inventory: 2 chargers (not his)<br>Ability: "Bro one minute charger?"`; }
+function wardScan(){ sfx('alarm'); const v=55+Math.floor(Math.random()*44); document.getElementById('wardV').textContent=v+'%'; document.getElementById('wardBar').style.width=v+'%'; document.getElementById('wardTxt').textContent=v>80?'MOVEMENT DETECTED: Potential Warden. ALT+TAB NOW.':'Warden far. Safe to make maggi. Probably.'; }
+const BB=['Someone screamed "BROOO"','3 people entered Room 207','Maggi detected on terrace','Academic motivation lost','Charger disappeared','Unknown laughter detected','Warden slippers heard, false alarm','Chaya break extended by 40 min'];
+function bbPush(){ const d=new Date(); const line=`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')} — ${pick(BB)}`; const box=document.getElementById('blackbox'); if(!box)return; box.innerHTML=(line+'<br>'+box.innerHTML).split('<br>').slice(0,8).join('<br>'); }
+setInterval(bbPush,3500); bbPush();
+function acadGPS(){ sfx('primary'); document.getElementById('gpsOut').innerHTML=`DISTANCE: 120m<br>WALK: 2 min • HUMAN: 17 min<br><b>USELESS REROUTE: going to chaya kada instead.</b> Classroom unreachable. Motivation insufficient.`; }
+function repScore(){ sfx('secret'); const t=70+Math.floor(Math.random()*29); document.getElementById('repOut').innerHTML=`REPUTATION ${t}%<br>Title: 🔥 Certified Corridor Legend<br>✓ Survived Monday • ✓ Returned a charger • ✓ Attended breakfast`; }
+function chargerMap(){ sfx('primary'); const trail=['Room 213','Room 305','Terrace','Mess table 4','Unknown']; document.getElementById('chgMapOut').innerHTML='📍 '+trail.join('<br>📍 ')+'<br><b>CHARGER HAS ACHIEVED FREEDOM</b>'; }
+function hostelIQ(q){ sfx('random'); document.getElementById('iqOut').innerHTML=q==='exam'?'Attendance × Sleep × Luck × Last-night prep...<br><b>RESULT: 14.7% — Bro, start praying.</b>':'Mess 12% • Balance 34% • Hunger 97%<br><b>ORDER FOOD. Now.</b>'; }
+function genCert(){ sfx('secret'); const n=(document.getElementById('certName').value||'TEAM USELESS').toUpperCase(); document.getElementById('certOut').innerHTML=`<b>CERTIFIED USELESS</b><br>${n}<br>ISO-USELESS-9001 • Audit date: yesterday (missed)<br>Auditor remark: "Excellent confidence. Zero utility."<br>Valid until: next rain.`; toast('Certificate issued. Frame it. Uselessly.'); }
+function calcSLA(){ sfx('random'); document.getElementById('slaOut').innerHTML=`Uptime 12% × Effort 3% ÷ Chaya breaks 47<br><b>SLA: 0.00% — enterprise guarantee met.</b><br>Compensation: one extra pappadam (imaginary).`; }
+function exportReport(){ sfx('primary'); const txt=`NIGHTSHIFT USELESS REPORT v9.9.9\nISO-USELESS-9001 | SLA 0.00% | Uptime 12% (lunch)\n\nFindings:\n- Mess still bad.\n- Warden still coming.\n- Charger still missing.\n- This report fixed nothing.\n\nConclusion: 100% useless. Professional grade.\nSigned: WARDEN-02 (fictional), LAB-00, MASS-01.`; const b=new Blob([txt],{type:'text/plain'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='NIGHTSHIFT-useless-report.txt'; a.click(); toast('Report downloaded. Contains nothing. Professionally formatted.'); }
+let mazeRound=1, mazeCorrect=1;
+function mazePick(b){ if(b.disabled)return; const btns=[...document.querySelectorAll('#mazeBox button')]; const idx=btns.indexOf(b);
+ if(idx===mazeCorrect){ sfx('secret'); document.getElementById('mazeOut').innerHTML=`Round ${mazeRound}: CORRECT! Reward: next buttons disabled 4s. Useless!`;
+  btns.forEach(x=>{ if(x!==b){ x.disabled=true; setTimeout(()=>{x.disabled=false;},4000); } });
+  mazeRound++; mazeCorrect=Math.floor(Math.random()*btns.length); toast(`Round ${mazeRound}. Correct moved. Good luck (you won't).`); }
+ else { sfx('alarm'); mapSpin(false); document.getElementById('mazeOut').textContent=`Wrong. Button ${'ABC'[idx]} does nothing. Map spun as punishment. Round ${mazeRound}.`; } }
+let tickN=1042; function fakeTicket(){ sfx('alarm'); tickN++; document.getElementById('ticketOut').innerHTML=`Ticket #NS-${tickN} raised.<br>Status: ASSIGNED TO NOBODY<br>ETA: after exams (never)<br>Action taken: chaya break.`; }
+let SNORES=0, WASH=[], CHANGED=0, UNCHANGED=0;
+function snoreScan(){ sfx('random'); let i=0; const grades=['SILENT SUSPICIOUS','TABLE FAN','TRACTOR','THUNDER + VIBRATION','WARDEN WAS CALLED'];
+ const iv=setInterval(()=>{ const db=35+Math.floor(Math.random()*65); SNORES+=Math.floor(Math.random()*14+3);
+  document.getElementById('snoreDb').textContent=db+' dB'; document.getElementById('snoreBar').style.width=Math.min(100,db)+'%';
+  if(++i>=6){ clearInterval(iv); const g=db>85?4:db>70?3:db>55?2:db>42?1:0;
+   document.getElementById('snoreOut').innerHTML=`Total snores: <b>${SNORES}</b><br>Peak: ${db} dB • Pattern: ${pick(['chainsaw-interval','whistle-gap','tractor-idle','ghost-mode'])}<br>GRADE: <b>${grades[g]}</b><br>Mark: ${'⭐'.repeat(g+1)} (useless stars)<br>Sleep-talk detected: "${pick(['"attendance undo..."','"chaya... extra..."','"fan off cheyyalle..."','"assignment tomorrow... zzz"','"ammachi calling..."'])}"`; toast('Snore scan complete. Evidence useless.'); } },350); }
+function washLog(){ sfx('primary'); const acts=['45 min phone (1 min bath)','brushed... maybe','existential crisis + flush','sang 3 songs, skipped bath','went in dry, came out wet, questions remain','mirror motivation speech, 22 min']; const d=5+Math.floor(Math.random()*45);
+ const e={n:WASH.length+1,dur:d,act:pick(acts)}; WASH.push(e);
+ document.getElementById('washOut').innerHTML=WASH.slice(-4).map(t=>`Trip ${t.n}: ${t.dur} min — ${t.act}`).join('<br>')+`<br><b>Total trips: ${WASH.length} • Total occupancy: ${WASH.reduce((a,b)=>a+b.dur,0)} min of your life gone.</b>`; }
+function washReport(){ sfx('alarm'); if(!WASH.length)washLog(); const tot=WASH.reduce((a,b)=>a+b.dur,0);
+ document.getElementById('washOut').innerHTML=`<b>24H WASHROOM DOSSIER</b><br>Trips: ${WASH.length} • Avg: ${Math.round(tot/WASH.length)} min<br>Longest: ${Math.max(...WASH.map(t=>t.dur))} min (phone 98%)<br>Water used: 2 mugs (claimed) • 2 tanks (actual)<br>Conclusion: lives in bathroom. Pays no rent there either.`; }
+function clothTrack(ch){ sfx(ch?'primary':'alarm'); if(ch)CHANGED++; else UNCHANGED++;
+ const streak=UNCHANGED>3?'⚠️ SMELL INDEX: EVACUATE BLOCK':'SMELL INDEX: survivable';
+ document.getElementById('clothOut').innerHTML=`Changed: ${CHANGED} • Not changed: ${UNCHANGED}<br>Bath: ${pick(['taken (claimed)','taken (witnessed by nobody)','postponed to tomorrow ×4','only legs, festival special'])}<br>Mundu rotation: day ${1+UNCHANGED}<br><b>${streak}</b><br>Deo applied: ${UNCHANGED>2?'entire bottle. Failed.':'half bottle. Hopeful.'}`; }
+function dossier(){ sfx('secret'); const a=(document.getElementById('rm1')&&document.getElementById('rm1').value)||'VICTIM-01';
+ const threat=SNORES>100||WASH.length>5||UNCHANGED>3?'🔴 CERTIFIED MENACE':'🟡 MILDLY UNHYGIENIC (LOVABLE)';
+ document.getElementById('dossierOut').innerHTML=`<b>DOSSIER: ${a.toUpperCase()}</b><br>Snores logged: ${SNORES} • Wash trips: ${WASH.length} • Changed ${CHANGED}× / Skipped ${UNCHANGED}×<br>Crimes: ${pick(['stole maggi + denied with full mouth','used your towel as doormat','fan at 5, blanket stolen','charger "borrowed" permanently','slept through your alarm + his alarm'])}<br>Fan fights won: 7 • Lost: 0 (claims)<br><b>${threat}</b><br>Action: none. This file does nothing. Professional useless.`; toast('Dossier generated. Legally worthless.'); }
+function massCinema(){ const c=document.getElementById('cinema'); c.classList.add('on'); sfx('secret'); playSynth('dash'); setTimeout(()=>playSynth('chaos'),900); }
+document.getElementById('cinema').addEventListener('click',()=>document.getElementById('cinema').classList.remove('on'));
+
+// ---------- emergency + easter ----------
+function emergency(t,p){ sfx('alarm'); document.getElementById('emgOut').textContent='» '+t+' — '+p; toast(t); }
+document.getElementById('logo').addEventListener('click',()=>{ logoClicks++; sfx('primary'); if(logoClicks===5){massMode(); toast('MASS ENTRY: 5x logo. Fictional mass mode ON.'); logoClicks=0;} else if(logoClicks>1)toast('Easter egg arming... '+(5-logoClicks)+' more'); });
+function massMode(){ document.body.classList.add('massmode'); sfx('secret'); setTimeout(()=>document.body.classList.remove('massmode'),6000); }
+document.querySelector('footer').addEventListener('dblclick',()=>{ sfx('secret'); toast('Secret: rain never stops here. Neither do we. Chaya?'); });
+
+// ---------- rain ----------
+const cv=document.getElementById('rain'),cx=cv.getContext('2d'); let drops=[];
+function rs(){ cv.width=innerWidth; cv.height=innerHeight; drops=Array.from({length:innerWidth<700?50:110},()=>({x:Math.random()*cv.width,y:Math.random()*cv.height,l:10+Math.random()*18,s:6+Math.random()*8})); }
+addEventListener('resize',rs); rs();
+(function loop(){ cx.clearRect(0,0,cv.width,cv.height); cx.strokeStyle='rgba(77,227,255,.35)'; cx.lineWidth=1; drops.forEach(d=>{cx.beginPath();cx.moveTo(d.x,d.y);cx.lineTo(d.x-2,d.y+d.l);cx.stroke(); d.y+=d.s; d.x-=.6; if(d.y>cv.height){d.y=-20;d.x=Math.random()*cv.width}}); requestAnimationFrame(loop); })();
+
+// ---------- parallax ----------
+addEventListener('mousemove',e=>{ if(innerWidth<900)return; const x=(e.clientX/innerWidth-.5)*14, y=(e.clientY/innerHeight-.5)*10; document.querySelectorAll('.char').forEach((c,i)=>{ c.style.transform=`translate(${x*(i%2?1:-1)}px,${y}px)`; }); });
+
+// ---------- boot ----------
+const BOOT=['> NIGHTSHIFT kernel v3.7 ... OK','> monsoon drivers ... LOADED (rain.exe)','> chaya reserves ... 41% (low, survivable)','> warden radar ... ACTIVE','> mass mode ... ARMED (fictional)','> hostel blocks A/B ... SNORING','> KSRTC bus ... MISSED (as usual)','> ACCESS GRANTED. Welcome back, inmate.'];
+let bi=0;
+function bootStep(){ if(bi<BOOT.length){ document.getElementById('bootTxt').textContent+=BOOT[bi++]+'\n'; document.getElementById('bootBar').style.width=(bi/BOOT.length*100)+'%'; tone(400+bi*80,.06,'square',.03); setTimeout(bootStep,320);} else setTimeout(skipBoot,500); }
+function skipBoot(){ document.getElementById('boot').classList.add('done'); }
+addEventListener('keydown',e=>{ if(e.key.toLowerCase()==='s'&&!document.getElementById('boot').classList.contains('done'))skipBoot(); });
+go('dash'); bootStep();
+</script>
+</body>
+</html>
